@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>For You</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Montserrat:wght@300&display=swap');
+
+        /* --- CSS Reset & Basics --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Montserrat', sans-serif;
+            color: white;
+        }
+
+        /* --- Background Elements (Stars & Floating Hearts) --- */
+        #stars-container, #floating-hearts-container {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+        
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            opacity: 0.5;
+            animation: twinkle infinite ease-in-out;
+        }
+
+        .floating-heart-bg {
+            position: absolute;
+            opacity: 0.4;
+            bottom: -50px;
+            animation: floatUp linear forwards;
+            color: #ff8fab; /* Soft pink color */
+            filter: drop-shadow(0 0 5px rgba(255, 143, 171, 0.5));
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.2; transform: scale(0.8); }
+            50% { opacity: 0.7; transform: scale(1.2); }
+        }
+
+        @keyframes floatUp {
+            to { transform: translateY(-120vh) rotate(360deg); opacity: 0;}
+        }
+
+        /* --- The Central Trigger Heart --- */
+        .trigger-wrapper {
+             position: relative;
+             z-index: 10;
+             display: flex;
+             flex-direction: column;
+             align-items: center;
+             transition: transform 0.3s ease, opacity 0.5s ease;
+        }
+
+        .heart-container {
+            cursor: pointer;
+            position: relative;
+        }
+
+        .heart {
+            background-color: #ff4d6d;
+            display: inline-block;
+            height: 60px;
+            margin: 0 10px;
+            position: relative;
+            transform: rotate(-45deg);
+            width: 60px;
+            box-shadow: 0 0 20px #ff4d6d, 0 0 40px #ff002b;
+            animation: heartbeat 1.5s infinite;
+        }
+
+        .heart:before, .heart:after {
+            content: "";
+            background-color: #ff4d6d;
+            border-radius: 50%;
+            height: 60px;
+            position: absolute;
+            width: 60px;
+        }
+
+        .heart:before { top: -30px; left: 0; }
+        .heart:after { left: 30px; top: 0; }
+
+        /* Added sparkles around the main heart */
+        .heart-sparkle {
+            position: absolute;
+            width: 4px; height: 4px; background: white; border-radius: 50%;
+            box-shadow: 0 0 10px white;
+            animation: sparkleOrbit 2s infinite linear;
+        }
+        .hs-1 { top: -20px; left: 50%; animation-delay: 0s;}
+        .hs-2 { top: 50%; right: -30px; animation-delay: 0.5s;}
+        .hs-3 { bottom: -30px; left: 50%; animation-delay: 1s;}
+        .hs-4 { top: 50%; left: -30px; animation-delay: 1.5s;}
+
+        .click-text {
+            margin-top: 60px;
+            text-align: center;
+            font-size: 1rem;
+            opacity: 0.8;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            text-shadow: 0 0 10px rgba(255, 77, 109, 0.8);
+        }
+
+        @keyframes heartbeat {
+            0% { transform: rotate(-45deg) scale(1); }
+            14% { transform: rotate(-45deg) scale(1.2); }
+            28% { transform: rotate(-45deg) scale(1); }
+            42% { transform: rotate(-45deg) scale(1.2); }
+            70% { transform: rotate(-45deg) scale(1); }
+        }
+        @keyframes sparkleOrbit {
+            0% { transform: scale(0.5); opacity: 0;}
+            50% { transform: scale(1.2); opacity: 1;}
+            100% { transform: scale(0.5); opacity: 0;}
+        }
+
+        /* --- The Letter / Modal --- */
+        .letter-container {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%) scale(0.8);
+            width: 90%;
+            max-width: 550px;
+            background: rgba(20, 20, 30, 0.6); /* Darker tone for contrast */
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 30px 40px;
+            border-radius: 20px;
+            box-shadow: 0 0 60px rgba(255, 77, 109, 0.15);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 20;
+            text-align: center;
+        }
+
+        .letter-container.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        /* The White Tulip */
+        .tulip-svg {
+            width: 70px;
+            height: auto;
+            display: block;
+            margin: 0 auto 15px auto;
+            filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.8));
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 1.5s ease 0.5s; /* Delay the tulip appearance */
+        }
+        
+        .letter-container.active .tulip-svg {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        h1 {
+            font-family: 'Dancing Script', cursive;
+            font-size: 2.8rem;
+            color: #ffffff; /* White header now */
+            margin-bottom: 20px;
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.4);
+        }
+
+        p {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            color: #e0e0e0;
+            min-height: 120px;
+        }
+
+        /* --- Canvas for Magic Dust --- */
+        #magic-canvas {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 15;
+            pointer-events: none;
+        }
+
+        /* Mobile Adjustments */
+        @media (max-width: 600px) {
+            .heart { height: 50px; width: 50px; }
+            .heart:before, .heart:after { height: 50px; width: 50px; }
+            .heart:before { top: -25px; }
+            .heart:after { left: 25px; }
+            h1 { font-size: 2.2rem; }
+            p { font-size: 1rem; }
+            .tulip-svg { width: 60px; }
+        }
+    </style>
+</head>
+<body>
+    <audio id="bg-music" loop>
+    <source src="music.mp3" type="audio/mp3"> 
+</audio>
+
+    <div id="stars-container"></div>
+    <div id="floating-hearts-container"></div>
+
+    <div class="trigger-wrapper" id="heart-trigger">
+        <div class="heart-container">
+            <div class="heart"></div>
+            <div class="heart-sparkle hs-1"></div>
+            <div class="heart-sparkle hs-2"></div>
+            <div class="heart-sparkle hs-3"></div>
+            <div class="heart-sparkle hs-4"></div>
+        </div>
+        <div class="click-text">Papindot Bes</div>
+    </div>
+
+    <canvas id="magic-canvas"></canvas>
+
+    <div class="letter-container" id="letter">
+        <svg class="tulip-svg" viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">
+            <path d="M50 115 C 50 115, 45 80, 50 60 C 50 60, 30 85, 20 110" stroke="#4a7c59" stroke-width="3" fill="none"/>
+            <path d="M50 90 C 50 90, 70 100, 80 115" stroke="#4a7c59" stroke-width="3" fill="none"/>
+            <path d="M40 65 Q 30 40, 50 10 Q 70 40, 60 65" fill="#f8f9fa" />
+             <path d="M40 65 Q 50 80, 60 65" fill="#e9ecef" />
+             <path d="M43 40 Q 50 25, 57 40" fill="none" stroke="#dee2e6" stroke-width="1" opacity="0.5"/>
+        </svg>
+
+        <h1>Happy Valentine's Day!</h1>
+        <p id="typewriter-text"></p>
+    </div>
+
+    <script>
+        // --- CONFIGURATION: EDIT THIS TEXT FOR HER ---
+        // I updated the message slightly to fit the tulip theme
+        const message = 
+        "Happy Valentine's Day Avejane Feliciano! i really dont know what to say but i hope you like this small surprise i made for you. i know it's not much but i just want to show you how much i care for you and how much you mean to me and thank you, wishing you have a great amazing day today YUN LANGGZZ.... ";
+        const speed = 45; // Speed of typing
+        // ---------------------------------------------
+
+        // 1. Setup Stars & Floating Hearts Background
+        const starsContainer = document.getElementById('stars-container');
+        const heartsContainer = document.getElementById('floating-hearts-container');
+
+        function createStar() {
+            const star = document.createElement('div');
+            star.classList.add('star');
+            star.style.top = `${Math.random() * 100}%`;
+            star.style.left = `${Math.random() * 100}%`;
+            const size = Math.random() * 2 + 1;
+            star.style.width = `${size}px`;
+            star.style.height = `${size}px`;
+            star.style.animationDuration = `${Math.random() * 3 + 2}s`;
+            star.style.animationDelay = `${Math.random() * 2}s`;
+            starsContainer.appendChild(star);
+        }
+
+        function createFloatingHeart() {
+            const heart = document.createElement('div');
+            heart.classList.add('floating-heart-bg');
+            heart.innerHTML = '♥'; // Using a simple heart character
+            heart.style.left = `${Math.random() * 100}%`;
+            heart.style.fontSize = `${Math.random() * 20 + 10}px`;
+            const duration = Math.random() * 10 + 10; // 10-20s slow float
+            heart.style.animationDuration = `${duration}s`;
+            heart.style.animationDelay = `-${Math.random() * duration}s`; // Start at random points in animation
+            
+            heartsContainer.appendChild(heart);
+            // Cleanup
+            setTimeout(() => { heart.remove(); }, duration * 1000);
+        }
+
+        // Initialize background elements
+        for (let i = 0; i < 80; i++) createStar();
+        // Create a new floating heart every 800ms
+        setInterval(createFloatingHeart, 800);
+
+
+        // 2. Setup Magic Particles (Enhanced for sparkle)
+        const canvas = document.getElementById('magic-canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        let particles = [];
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        class Particle {
+            constructor(x, y) {
+                this.x = x; this.y = y;
+                this.size = Math.random() * 6 + 2;
+                this.speedX = Math.random() * 8 - 4;
+                this.speedY = Math.random() * 8 - 4;
+                // Color Palette: Pinks, Reds, and Whites/Golds for sparkle
+                const randomChoice = Math.random();
+                if (randomChoice < 0.6) {
+                     this.color = `hsl(${Math.random() * 50 + 330}, 100%, 65%)`; // Pink/Red
+                } else {
+                     this.color = `hsl(${Math.random() * 40 + 40}, 100%, ${Math.random() * 20 + 80}%)`; // Gold/White
+                }
+                
+                this.life = 100;
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY * 1.05; // Slight gravity acceleration
+                this.life -= 1.5;
+                this.size *= 0.96;
+            }
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = this.color;
+                ctx.fill();
+            }
+        }
+
+        function handleParticles() {
+            for (let i = 0; i < particles.length; i++) {
+                particles[i].update();
+                particles[i].draw();
+                if (particles[i].life <= 0) {
+                    particles.splice(i, 1);
+                    i--;
+                }
+            }
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            handleParticles();
+            requestAnimationFrame(animate);
+        }
+        animate();
+
+        // 3. Interaction Logic
+        const triggerWrapper = document.getElementById('heart-trigger');
+        const heartBtn = document.querySelector('.heart-container');
+        const letter = document.getElementById('letter');
+        const textElement = document.getElementById('typewriter-text');
+        
+        heartBtn.addEventListener('click', (e) => {
+
+            document.getElementById('bg-music').play();
+            const audio = document.getElementById('bg-music');
+audio.volume = 0.5; // 0.5 is 50% volume
+audio.play();
+            // Explode particles
+            const rect = heartBtn.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            
+            for (let i = 0; i < 150; i++) { // More particles!
+                particles.push(new Particle(centerX, centerY));
+            }
+
+            // Hide Trigger, Show Letter
+            triggerWrapper.style.transform = "scale(0) rotate(360deg)";
+            triggerWrapper.style.opacity = "0";
+            
+            setTimeout(() => {
+                triggerWrapper.style.display = 'none';
+                letter.classList.add('active');
+                // Slight delay before typing starts so the tulip can bloom first
+                setTimeout(typeWriter, 800); 
+            }, 500);
+        });
+
+        // 4. Typewriter Effect
+        let i = 0;
+        function typeWriter() {
+            if (i < message.length) {
+                textElement.innerHTML += message.charAt(i);
+                i++;
+                setTimeout(typeWriter, speed);
+            }
+        }
+    </script>
+</body>
+</html>
